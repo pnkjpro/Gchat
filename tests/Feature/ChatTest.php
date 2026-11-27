@@ -7,10 +7,14 @@ use App\Models\Conversation;
 use App\Models\User;
 use App\Notifications\ConversationNudge;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Notifications\SendQueuedNotifications;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Notifications\Channels\MailChannel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use Mockery\MockInterface;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Tests\TestCase;
 
 class ChatTest extends TestCase
@@ -185,7 +189,7 @@ class ChatTest extends TestCase
         Notification::fake();
         User::factory()->create();
         $chat = Livewire::test(Chat::class)->call('selectConversation', $this->conversation->id)
-            ->call('nudge')->assertHasNoErrors()->assertSee('Nudge queued for Bob.');
+            ->call('nudge')->assertHasNoErrors()->assertSee('Nudge sent to Bob.');
 
         Notification::assertSentTo($this->bob, ConversationNudge::class, fn ($notification) => $notification->senderName === 'Alice' && $notification->conversationId === $this->conversation->id);
         Notification::assertNotSentTo($this->alice, ConversationNudge::class);
@@ -197,13 +201,44 @@ class ChatTest extends TestCase
         Notification::assertSentTimes(ConversationNudge::class, 2);
     }
 
-    public function test_nudge_is_queued_with_an_authenticated_link_and_no_message_content(): void
+    public function test_nudge_sends_mail_during_the_request_without_queueing_even_with_a_database_queue(): void
     {
+        config(['queue.default' => 'database']);
         Queue::fake();
-        Livewire::test(Chat::class)->call('selectConversation', $this->conversation->id)->call('nudge');
+        Event::fake([MessageSent::class]);
+        $this->conversation->messages()->create(['user_id' => $this->alice->id, 'body' => 'Private chat content']);
 
-        Queue::assertPushed(SendQueuedNotifications::class, fn ($job) => $job->notifiables->contains('id', $this->bob->id) && $job->channels === ['mail']);
+        Livewire::test(Chat::class)->call('selectConversation', $this->conversation->id)
+            ->call('nudge')->assertHasNoErrors()->assertSee('Nudge sent to Bob.');
 
+        Event::assertDispatched(MessageSent::class, function (MessageSent $event): bool {
+            return count($event->message->getTo()) === 1
+                && $event->message->getTo()[0]->getAddress() === $this->bob->email
+                && $event->message->getSubject() === 'Alice nudged you on Gchat'
+                && ! str_contains($event->message->getHtmlBody(), 'Private chat content');
+        });
+        Queue::assertNothingPushed();
+        $this->assertDatabaseCount('jobs', 0);
+    }
+
+    public function test_smtp_failure_shows_an_error_and_allows_an_immediate_retry(): void
+    {
+        $this->mock(MailChannel::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('send')->once()->andThrow(new TransportException('SMTP authentication failed.'));
+            $mock->shouldReceive('send')->once()->andReturnNull();
+        });
+
+        $chat = Livewire::test(Chat::class)->call('selectConversation', $this->conversation->id)
+            ->call('nudge')->assertHasErrors('nudge')->assertSet('notice', '')
+            ->assertSee('The nudge could not be sent. Please try again.')
+            ->assertDontSee('SMTP authentication failed.');
+
+        $chat->call('nudge')->assertHasNoErrors()->assertSee('Nudge sent to Bob.');
+        $chat->call('nudge')->assertHasErrors('nudge')->assertSet('notice', '');
+    }
+
+    public function test_nudge_mail_links_to_the_authenticated_conversation(): void
+    {
         $notification = new ConversationNudge('Alice', $this->conversation->id);
         $mail = $notification->toMail($this->bob);
         $this->assertSame(route('chat', ['conversation' => $this->conversation->id]), $mail->actionUrl);

@@ -32,7 +32,7 @@
         @if ($conversation)
             <header class="chat-header">
                 <div class="chat-person"><span class="avatar header-avatar">{{ mb_strtoupper(mb_substr($recipient->name, 0, 1)) }}</span><div><h2>{{ $recipient->name }}</h2><span class="muted">Private conversation · {{ $recipient->email }}</span></div></div>
-                <button class="button nudge" type="button" wire:click="nudge" wire:loading.attr="disabled" wire:target="nudge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span wire:loading.remove wire:target="nudge">Nudge</span><span wire:loading wire:target="nudge">Queuing…</span></button>
+                <button class="button nudge" type="button" wire:click="nudge" wire:loading.attr="disabled" wire:target="nudge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span wire:loading.remove wire:target="nudge">Nudge</span><span wire:loading wire:target="nudge">Sending…</span></button>
             </header>
             <div class="mode-bar">
                 <div class="mode-tabs" role="group" aria-label="Message view mode">

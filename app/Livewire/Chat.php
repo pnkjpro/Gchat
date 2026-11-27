@@ -98,24 +98,29 @@ class Chat extends Component
     public function nudge(): void
     {
         $conversation = $this->activeConversation();
+        $recipient = $conversation->otherParticipant(Auth::id());
+        $this->reset('notice');
+        $this->resetValidation('nudge');
         $key = 'nudge:'.Auth::id().':'.$conversation->id;
         $cooldown = config('chat.nudge_cooldown_seconds');
 
         if (! Cache::add($key, true, $cooldown)) {
-            throw ValidationException::withMessages(['nudge' => 'A nudge was already queued. Please wait '.$cooldown.' seconds before nudging again.']);
+            throw ValidationException::withMessages(['nudge' => 'Please wait '.$cooldown.' seconds before nudging again.']);
         }
 
         try {
-            $conversation->otherParticipant(Auth::id())->notify(
+            $recipient->notifyNow(
                 new ConversationNudge(Auth::user()->name, $conversation->id)
             );
         } catch (\Throwable $exception) {
             Cache::forget($key);
-            throw $exception;
+            report($exception);
+            $this->addError('nudge', 'The nudge could not be sent. Please try again.');
+
+            return;
         }
 
-        $this->resetValidation('nudge');
-        $this->notice = 'Nudge queued for '.$conversation->otherParticipant(Auth::id())->name.'.';
+        $this->notice = 'Nudge sent to '.$recipient->name.'.';
     }
 
     private function activeConversation(): Conversation

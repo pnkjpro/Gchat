@@ -4,14 +4,10 @@ Private one-to-one messaging with Laravel 13 and Livewire 4 polling. PHP 8.3+ an
 
 ## Run locally
 
-This workspace already has dependencies, an application key, and a migrated SQLite database. In two terminals:
+This workspace already has dependencies, an application key, and a migrated SQLite database. Start the app:
 
 ```powershell
 composer run dev
-```
-
-```powershell
-composer run queue
 ```
 
 Open http://127.0.0.1:8000. Register two accounts (use separate browsers or an incognito window), then enter the other account's registered email to start a conversation. A conversation is visible only to its two participants.
@@ -32,15 +28,29 @@ CHAT_DISAPPEAR_AFTER_SECONDS=5
 CHAT_NUDGE_COOLDOWN_SECONDS=60
 ```
 
-After changing cached configuration, run `php artisan config:clear` and restart the queue worker.
+After changing cached configuration, run `php artisan config:clear` locally or `php artisan optimize` when deploying to production.
 
 ## Nudge notifications
 
-Nudge queues a Laravel mail notification addressed only to the other participant, with a link back to the authenticated conversation. Message text is excluded from email. Each sender can nudge a given conversation once per configured cooldown.
+Nudge sends a Laravel mail notification immediately during the button request, addressed only to the other participant, with a link back to the authenticated conversation. Message text is excluded from email. Each sender can nudge a given conversation once per configured cooldown. No queue worker, Supervisor, or cron job is required.
 
-Local `MAIL_MAILER=log` writes mail to `storage/logs/laravel.log`. A worker must be running to process nudges. For real delivery, configure `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME`, and `MAIL_FROM_ADDRESS` for your provider. Set `APP_URL` to the address recipients will use. Real SMTP delivery has not been tested.
+Local `MAIL_MAILER=log` writes mail to `storage/logs/laravel.log`. For real delivery, configure `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME`, and `MAIL_FROM_ADDRESS` for your provider. Set `APP_URL` to the address recipients will use. The configurable SMTP socket timeout is `MAIL_TIMEOUT=15` seconds by default.
 
-Notifications retry three times with a 30-second backoff. Inspect failed jobs with `php artisan queue:failed`; after fixing the mail configuration, retry the chosen job with `php artisan queue:retry <id>`.
+The button displays "Sending…" while SMTP runs and confirms success after the mail call completes. SMTP acceptance does not guarantee inbox placement. A failed send displays an error, records diagnostic details in the application log, and releases the cooldown so the user can retry. There are no automatic background retries.
+
+## MilesWeb shared hosting
+
+Upload the updated application code, including `app/Notifications/ConversationNudge.php`, `app/Livewire/Chat.php`, `resources/views/livewire/chat.blade.php`, `config/mail.php`, and `config/queue.php`. Keep the hosting account's SMTP settings and credentials in its own `.env` file:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_TIMEOUT=15
+QUEUE_CONNECTION=sync
+```
+
+Then run `php artisan optimize` from the production application directory. Nudge uses immediate notification delivery even if an existing deployment still has `QUEUE_CONNECTION=database`. Remove any worker process or queue cron entry previously configured for this app. Existing queue tables can remain; no database migration or table deletion is required for this change. Previously queued notifications are not automatically replayed.
+
+Check that the other participant's registered email in the production database is a real inbox. Local demo account changes do not transfer through `.env` or code deployment.
 
 ## Verification
 
@@ -49,9 +59,9 @@ php artisan test --compact
 php vendor/laravel/pint/builds/pint --format agent
 ```
 
-Tests cover authentication, private conversation access, both participants' messages, configurable expiry and exact timing, database retention, M2 history pagination, input validation, escaped message content, queued nudges, and cooldown enforcement.
+Tests cover authentication, private conversation access, both participants' messages, configurable expiry and exact timing, database retention, M2 history pagination, input validation, escaped message content, immediate nudge delivery without queued jobs, SMTP failure handling, retry after failure, and cooldown enforcement.
 
-Browser checks also verified registration, sign-in/out, a private conversation, incoming messages through polling, M1 disappearance, M2 recovery, and the nudge action. The local queued nudge was processed successfully using the log mailer. Two local demo accounts and sample messages were created during these checks.
+Browser checks verified registration, sign-in/out, a private conversation, incoming messages through polling, M1 disappearance, M2 recovery, and the nudge button. An earlier SMTP nudge test was accepted by MilesWeb and receipt was confirmed by the user. The immediate delivery change is covered by automated tests using the in-memory mail transport. Two local demo accounts and sample messages were created during browser checks.
 
 ## Scope
 

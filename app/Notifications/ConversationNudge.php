@@ -3,19 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\User;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ConversationNudge extends Notification implements ShouldQueue
+class ConversationNudge extends Notification
 {
-    use Queueable;
-
-    public int $tries = 3;
-
-    public int $backoff = 30;
-
     public function __construct(public string $senderName, public int $conversationId) {}
 
     public function via(User $notifiable): array
