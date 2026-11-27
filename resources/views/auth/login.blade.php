@@ -1,20 +1,20 @@
 <x-layout title="Sign in">
     <main class="auth-shell">
         <section class="auth-story">
-            <a class="brand" href="{{ url('/') }}"><span class="brand-mark">g.</span> Gchat</a>
+            <a class="brand" href="{{ url('/') }}"><span class="brand-mark">e.</span> espace</a>
             <div>
                 <span class="eyebrow">A LITTLE LESS NOISE</span>
-                <h1>Good conversations.<br>A little more presence.</h1>
-                <p>A private space for the two of you. Be in the moment, or take your time with the full conversation.</p>
-                <div class="mode-preview"><span class="mode-dot"></span> In the moment <span class="preview-divider">/</span> Saved for later</div>
+                <h1>Good company.<br>A little more play.</h1>
+                <p>A quick catch-up, a friendly game, and a little time well spent. Make room for a good little break.</p>
+                <div class="mode-preview"><span class="mode-dot"></span> Chess <span class="preview-divider">/</span> Ludo <span class="preview-divider">/</span> Catch up</div>
             </div>
-            <span class="story-footnote">Two people. Two modes. One conversation.</span>
+            <span class="story-footnote">Good company. Good moves.</span>
         </section>
         <section class="auth-panel">
             <div class="auth-card">
                 <span class="eyebrow">WELCOME BACK</span>
-                <h2>Pick up the conversation.</h2>
-                <p class="muted">Sign in to your private messages.</p>
+                <h2>Pick up where you left off.</h2>
+                <p class="muted">Your people and your next move are waiting.</p>
                 <form method="POST" action="{{ route('login') }}" class="stack">
                     @csrf
                     <div><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" value="{{ old('email') }}" required autofocus>@error('email')<p class="error">{{ $message }}</p>@enderror</div>

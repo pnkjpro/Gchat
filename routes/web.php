@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,5 +15,6 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::view('/chat', 'chat')->name('chat');
+    Route::get('/attachments/{message}', AttachmentController::class)->name('attachments.show');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

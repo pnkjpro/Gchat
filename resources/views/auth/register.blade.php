@@ -1,20 +1,20 @@
 <x-layout title="Create account">
     <main class="auth-shell">
         <section class="auth-story">
-            <a class="brand" href="{{ url('/') }}"><span class="brand-mark">g.</span> Gchat</a>
+            <a class="brand" href="{{ url('/') }}"><span class="brand-mark">e.</span> espace</a>
             <div>
                 <span class="eyebrow">MAKE ROOM FOR CONNECTION</span>
-                <h1>A conversation<br>just for the two of you.</h1>
-                <p>Start with an email address. Stay in the moment with disappearing messages, or revisit everything in saved mode.</p>
-                <div class="mode-preview"><span class="mode-dot"></span> Private, one to one</div>
+                <h1>Find your people.<br>Make your next move.</h1>
+                <p>A place for quick hellos, friendly competition, and the little moments that make your day.</p>
+                <div class="mode-preview"><span class="mode-dot"></span> A hello. A game. A good little break.</div>
             </div>
-            <span class="story-footnote">Messages stay saved. You choose what you see.</span>
+            <span class="story-footnote">Take a little time for the good stuff.</span>
         </section>
         <section class="auth-panel">
             <div class="auth-card">
                 <span class="eyebrow">YOUR SPACE STARTS HERE</span>
                 <h2>Let’s get you settled.</h2>
-                <p class="muted">Create an account to start a private conversation.</p>
+                <p class="muted">Create an account and join the good company.</p>
                 <form method="POST" action="{{ route('register') }}" class="stack">
                     @csrf
                     <div><label for="name">Your name</label><input id="name" name="name" autocomplete="name" value="{{ old('name') }}" required maxlength="80" autofocus>@error('name')<p class="error">{{ $message }}</p>@enderror</div>

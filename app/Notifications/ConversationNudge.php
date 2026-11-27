@@ -18,9 +18,9 @@ class ConversationNudge extends Notification
     public function toMail(User $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject($this->senderName.' nudged you on Gchat')
-            ->greeting('Hello '.$notifiable->name.',')
-            ->line($this->senderName.' would like your attention in your private conversation.')
-            ->action('Open conversation', route('chat', ['conversation' => $this->conversationId]));
+            ->subject('Take a little break with espace')
+            ->view(['html' => 'emails.nudge', 'text' => 'emails.nudge-text'], [
+                'spaceUrl' => route('chat', ['conversation' => $this->conversationId]),
+            ]);
     }
 }

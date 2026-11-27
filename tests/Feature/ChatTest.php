@@ -58,7 +58,7 @@ class ChatTest extends TestCase
         Livewire::test(Chat::class)
             ->call('selectConversation', $this->conversation->id)
             ->assertDontSee('Here for a moment')
-            ->call('switchMode', 'm2')
+            ->call('revealHistory')
             ->assertSee('Here for a moment')
             ->assertSee('Earlier conversation');
 
@@ -104,7 +104,7 @@ class ChatTest extends TestCase
             ->assertSee('Hello Bob')
             ->set('body', 'Hello Alice')
             ->call('sendMessage')
-            ->call('switchMode', 'm2')
+            ->call('revealHistory')
             ->assertSee('Hello Alice');
 
         $this->actingAs($this->alice);
@@ -179,7 +179,7 @@ class ChatTest extends TestCase
         $this->travel(6)->seconds();
         Livewire::test(Chat::class)->call('selectConversation', $this->conversation->id)
             ->assertDontSee('Saved message 055')
-            ->call('switchMode', 'm2')
+            ->call('revealHistory')
             ->assertSee('Saved message 055')->assertDontSee('Saved message 001')
             ->call('nextPage')->assertSee('Saved message 001')->assertDontSee('Saved message 055');
     }
@@ -214,7 +214,7 @@ class ChatTest extends TestCase
         Event::assertDispatched(MessageSent::class, function (MessageSent $event): bool {
             return count($event->message->getTo()) === 1
                 && $event->message->getTo()[0]->getAddress() === $this->bob->email
-                && $event->message->getSubject() === 'Alice nudged you on Gchat'
+                && $event->message->getSubject() === 'Take a little break with espace'
                 && ! str_contains($event->message->getHtmlBody(), 'Private chat content');
         });
         Queue::assertNothingPushed();
@@ -241,8 +241,8 @@ class ChatTest extends TestCase
     {
         $notification = new ConversationNudge('Alice', $this->conversation->id);
         $mail = $notification->toMail($this->bob);
-        $this->assertSame(route('chat', ['conversation' => $this->conversation->id]), $mail->actionUrl);
-        $this->assertStringContainsString('Alice', $mail->subject);
+        $this->assertSame(route('chat', ['conversation' => $this->conversation->id]), $mail->viewData['spaceUrl']);
+        $this->assertSame('Take a little break with espace', $mail->subject);
         $this->assertSame(['mail'], $notification->via($this->bob));
     }
 

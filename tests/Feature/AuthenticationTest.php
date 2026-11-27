@@ -58,7 +58,7 @@ class AuthenticationTest extends TestCase
 
     public function test_auth_pages_render(): void
     {
-        $this->get(route('login'))->assertOk()->assertSee('Pick up the conversation.');
+        $this->get(route('login'))->assertOk()->assertSee('Pick up where you left off.');
         $this->get(route('register'))->assertOk()->assertSee('Create an account');
     }
 }
